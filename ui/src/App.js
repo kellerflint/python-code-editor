@@ -1,13 +1,17 @@
-import React from 'react';
-import CodeEditor from './CodeEditor';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+import Login from './pages/login';
+import Success from './pages/success';
 
 const App = () => {
   return (
-    <div>
-      <h1>Python Code Editor</h1>
-      <CodeEditor />
-    </div>
-  );
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/success" element={<Success />} />
+      </Routes>
+    </BrowserRouter>
+  )
 };
 
 export default App;
