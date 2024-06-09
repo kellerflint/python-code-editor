@@ -42,34 +42,52 @@ let rooms = {}
 io.on('connection', (socket) => {
   console.log('New client connected');
 
-  socket.on('createRoom', () => {
+  socket.on('createRoom', (data) => {
+    const {code, output} = data;
     socket.leaveAll();
     const roomId = Math.random().toString(36).substring(7);
-    rooms[roomId] = {'code': '', 'output': ''};
+    rooms[roomId] = {'code': code, 'output': output};
     socket.join(roomId);
     socket.emit('roomCreated', roomId);
+    console.log("roomCreated", roomId, rooms[roomId])
   });
 
   socket.on('joinRoom', (roomId) => {
-    if (rooms[roomId]) {
-      socket.leaveAll();
-      socket.join(roomId);
-      socket.emit('roomJoined', { roomId, "data": rooms[roomId] });
+    if (!rooms[roomId]) {
+      console.log(`joinRoom failed: Room ${roomId} has not been created`);
+      return;
     }
+
+    socket.leaveAll();
+    socket.join(roomId);
+    socket.emit('roomJoined', { roomId, "data": rooms[roomId] });
+    console.log("roomJoined", roomId, rooms[roomId])
   });
 
   socket.on('codeChange', (data) => {
     const { roomId, code } = data;
-    rooms[roomId] = {'code': '', 'output': ''};;
-    console.log(rooms[roomId]);
-    console.log(roomId)
+
+    if (!rooms[data.roomId]) {
+      console.log(`codeChange failed: Room ${roomId} has not been created`);
+      return;
+    }
+    
+    rooms[roomId].code = code;
     socket.to(roomId).emit('codeUpdate', code);
+    console.log("codeChange", roomId, code)
   });
 
   socket.on('outputChange', (data) => {
     const { roomId, output } = data;
+    
+    if (!rooms[data.roomId]) {
+      console.log(`outputChange failed: Room ${roomId} has not been created`);
+      return;
+    }
+
     rooms[roomId].output = output;
     socket.to(roomId).emit('outputUpdate', output);
+    console.log("outputChange", roomId, output)
   });
 
   socket.on('disconnect', () => {

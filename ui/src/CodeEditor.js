@@ -43,8 +43,6 @@ const CodeEditor = () => {
         // Listen for the initial code from the server
         socket.on('roomJoined', (res) => {
             const { roomId, data: {code, output} } = res;
-            console.log(res);
-            console.log(roomId, code, output)
             setCode(code);
             setOutput(output);
             setCurrentRoomId(roomId);
