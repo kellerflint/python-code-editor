@@ -1,7 +1,7 @@
 import express from 'express';
 import http from 'http';
 import dotenv from 'dotenv';
-import setupRoomSocket from './sockets/roomSocket';
+import { setupRoomSocket } from './sockets/roomSocket.js';
 
 dotenv.config();
 

@@ -1,9 +1,9 @@
-import socketIO from 'socket.io';
-import { createRoom, getRoom, updateRoomCode, updateRoomOutput } from './roomService';
+import {Server as socketIO} from 'socket.io';
+import { createRoom, getRoom, updateRoomCode, updateRoomOutput, getRooms } from '../services/roomService.js';
 
 export const setupRoomSocket = (server) => {
 
-  const io = socketIO(server, {
+  const io = new socketIO(server, {
     cors: {
       origin: 'http://localhost:3000',
       methods: ['GET', 'POST'],
@@ -32,7 +32,6 @@ export const setupRoomSocket = (server) => {
 
     socket.on('codeChange', (data) => {
       const { roomId, code } = data;
-
       if (!getRoom(roomId)) {
         console.log(`codeChange failed: Room ${roomId} has not been created`);
         return;
@@ -45,7 +44,7 @@ export const setupRoomSocket = (server) => {
     socket.on('outputChange', (data) => {
       const { roomId, output } = data;
       
-      if (getRoom(roomId)) {
+      if (!getRoom(roomId)) {
         console.log(`outputChange failed: Room ${roomId} has not been created`);
         return;
       }

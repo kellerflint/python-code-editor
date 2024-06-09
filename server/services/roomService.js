@@ -18,3 +18,7 @@ export const updateRoomCode = (roomId, code) => {
 export const updateRoomOutput = (roomId, output) => {
     rooms[roomId].output = output;
 }
+
+export const getRooms = () => {
+    return rooms;
+}
