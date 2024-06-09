@@ -5,6 +5,8 @@ import 'ace-builds/src-noconflict/theme-monokai';
 import io from 'socket.io-client';
 
 const CodeEditor = () => {
+    const [currentRoomId, setCurrentRoomId] = useState('');
+    const [roomId, setRoomId] = useState('');
     const [code, setCode] = useState('');
     const [output, setOutput] = useState('');
     const [pyodide, setPyodide] = useState(null);
@@ -25,28 +27,52 @@ const CodeEditor = () => {
         loadPyodide();
 
         // Connect to the server using Socket.IO
-        const newSocket = io('http://localhost:3001');
-        setSocket(newSocket);
+        const socket = io('http://localhost:3001');
+        setSocket(socket);
+
+        socket.on('roomCreated', (newRoomId) => {
+            setRoomId(newRoomId);
+            setCurrentRoomId(newRoomId);
+        });
 
         // Listen for code updates from other clients
-        newSocket.on('codeUpdate', (newCode) => {
+        socket.on('codeUpdate', (newCode) => {
             setCode(newCode);
         });
 
         // Listen for the initial code from the server
-        newSocket.on('initialCode', (initialCode) => {
-            setCode(initialCode);
+        socket.on('roomJoined', (res) => {
+            const { roomId, data: {code, output} } = res;
+            console.log(res);
+            console.log(roomId, code, output)
+            setCode(code);
+            setOutput(output);
+            setCurrentRoomId(roomId);
+        });
+
+        socket.on('outputUpdate', (newOutput) => {
+            setOutput(newOutput);
         });
 
         // Clean up the socket connection on component unmount
         return () => {
-            newSocket.disconnect();
+            socket.disconnect();
         };
     }, []);
 
+    const handleCreateRoom = () => {
+        console.log("values", code, output)
+        socket.emit('createRoom', {code: code, output: output});
+    };
+
+    const handleJoinRoom = (roomIdToJoin) => {
+        socket.emit('joinRoom', roomIdToJoin);
+        setRoomId(roomIdToJoin);
+    }
+
     const handleCodeChange = (newCode) => {
         setCode(newCode);
-        socket.emit('codeChange', newCode);
+        socket.emit('codeChange', {roomId, code: newCode});
     };
 
     const handleCodeExecution = async () => {
@@ -71,13 +97,24 @@ const CodeEditor = () => {
             `);
 
             setOutput(output);
+            socket.emit('outputChange', { roomId, output });
         } catch (error) {
-            setOutput(`Error: ${error.message}`);
+            setOutput(error.message);
+            socket.emit('outputChange', { roomId, 'output': error.message });
         }
     };
 
     return (
         <div>
+            <h3>Room ID: {currentRoomId}</h3>
+            <button onClick={handleCreateRoom}>Create Room</button>
+            <input
+                type="text"
+                value={roomId}
+                onChange={(e) => setRoomId(e.target.value)}
+                placeholder="Enter room ID"
+            />
+            <button onClick={() => handleJoinRoom(roomId)}>Join Room</button>
             <AceEditor
                 mode="python"
                 theme="monokai"

@@ -20,7 +20,7 @@ app.use(cors({
 }));
 
 // MongoDB connection
-
+/*
 const dbUri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.pf0frdj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 mongoose.connect(dbUri, {
@@ -29,7 +29,7 @@ mongoose.connect(dbUri, {
 })
   .then(() => console.log('Connected to MongoDB'))
   .catch((error) => console.error('Error connecting to MongoDB:', error));
-
+*/
 const io = socketIO(server, {
   cors: {
     origin: 'http://localhost:3000',
@@ -37,19 +37,39 @@ const io = socketIO(server, {
   },
 });
 
-let currentCode = '';
+let rooms = {}
 
 io.on('connection', (socket) => {
   console.log('New client connected');
 
-  // Send the current code state to the newly connected client
-  socket.emit('initialCode', currentCode);
+  socket.on('createRoom', () => {
+    socket.leaveAll();
+    const roomId = Math.random().toString(36).substring(7);
+    rooms[roomId] = {'code': '', 'output': ''};
+    socket.join(roomId);
+    socket.emit('roomCreated', roomId);
+  });
 
-  // Listen for code changes from clients
-  socket.on('codeChange', (code) => {
-    currentCode = code; // Update the current code state
-    // Broadcast the code update to all other clients
-    socket.broadcast.emit('codeUpdate', code);
+  socket.on('joinRoom', (roomId) => {
+    if (rooms[roomId]) {
+      socket.leaveAll();
+      socket.join(roomId);
+      socket.emit('roomJoined', { roomId, "data": rooms[roomId] });
+    }
+  });
+
+  socket.on('codeChange', (data) => {
+    const { roomId, code } = data;
+    rooms[roomId] = {'code': '', 'output': ''};;
+    console.log(rooms[roomId]);
+    console.log(roomId)
+    socket.to(roomId).emit('codeUpdate', code);
+  });
+
+  socket.on('outputChange', (data) => {
+    const { roomId, output } = data;
+    rooms[roomId].output = output;
+    socket.to(roomId).emit('outputUpdate', output);
   });
 
   socket.on('disconnect', () => {
