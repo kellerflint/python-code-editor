@@ -1,6 +1,14 @@
-    "start": "npx nodemon app.js",
+package json for server:
+"start": "npx nodemon app.js",
 
 gcloud app deploy
+
+in CodeEditor:
+http://localhost:3001
+
+
+
+
 
 # Getting Started with Create React App
 

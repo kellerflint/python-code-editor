@@ -27,7 +27,7 @@ const CodeEditor = () => {
         loadPyodide();
 
         // Connect to the server using Socket.IO
-        const socket = io('http://localhost:3001');
+        const socket = io('https://python-code-editor.uw.r.appspot.com');
         setSocket(socket);
 
         socket.on('roomCreated', (newRoomId) => {
