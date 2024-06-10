@@ -5,7 +5,7 @@ export const setupRoomSocket = (server) => {
 
   const io = new socketIO(server, {
     cors: {
-      origin: 'http://localhost:3000',
+      origin: 'https://kellerflint.github.io', // 'http://localhost:3000'
       methods: ['GET', 'POST'],
     },
   });
