@@ -1,57 +1,55 @@
-import {Server as socketIO} from 'socket.io';
-import { createRoom, getRoom, updateRoomCode, updateRoomOutput, getRooms } from '../services/roomService.js';
+import WebSocketServer from 'ws';
+import * as Y from 'yjs';
+import { WebsocketProvider } from 'y-websocket';
+
+const rooms = new Map();
 
 export const setupRoomSocket = (server) => {
 
-  const io = new socketIO(server, {
-    cors: {
-      origin: process.env.FRONTEND_APP_URL,
-      methods: ['GET', 'POST'],
-    },
-  });
+  const wss = new WebSocketServer({ noServer: true });
 
-  io.on('connection', (socket) => {
+/*
 
-    socket.on('createRoom', (data) => {
-      socket.leaveAll();
-      const newRoomId = createRoom(data);
-      socket.join(newRoomId);
-      socket.emit('roomCreated', newRoomId);
+    verifyClient: (info, cb) => {
+      info.origin === process.env.FRONTEND_APP_URL 
+      ? cb(true)
+      : cb(false, 403, 'Forbidden');
+    }
+*/
+
+  wss.on('connection', (ws) => {
+
+    let wsProvider;
+
+    ws.on('message', (message) => {
+      const data = JSON.parse(message);
+
+      switch (data.action) {
+        case 'createRoom':
+          const roomId = Math.random().toString(36).substring(7);
+          rooms.set(roomId, new Y.Doc());
+          ws.send(JSON.stringify({ action: 'roomCreated', roomId }));
+          break;
+        case 'joinRoom':
+          roomId = data.roomId;
+          if (rooms.has(roomId)) {
+            doc = rooms.get(roomId);
+            wsProvider = new WebsocketProvider(roomId, doc, { ws });
+            ws.send(JSON.stringify({ action: 'roomJoined', roomId }));
+          } else {
+            ws.send(JSON.stringify({ action: 'roomNotFound', roomId }));
+          }
+          break;
+          default:
+            console.log('Invalid action');
+            ws.send(JSON.stringify({ action: 'invalidAction' }));
+        }
     });
 
-    socket.on('joinRoom', (roomId) => {
-      if (!getRoom(roomId)) {
-        console.log(`joinRoom failed: Room ${roomId} has not been created`);
-        return;
+    ws.on('close', () => {
+      if (wsProvider) {
+        wsProvider.destroy();
       }
-
-      socket.leaveAll();
-      socket.join(roomId);
-      socket.emit('roomJoined', { roomId, "data": getRoom(roomId) });
-    });
-
-    socket.on('codeChange', (data) => {
-      const { roomId, code } = data;
-      if (!getRoom(roomId)) {
-        console.log(`codeChange failed: Room ${roomId} has not been created`);
-        return;
-      }
-      
-      console.log("codeChange data:", data)
-      updateRoomCode(roomId, code);
-      socket.to(roomId).emit('codeUpdate', code);
-    });
-
-    socket.on('outputChange', (data) => {
-      const { roomId, output } = data;
-      
-      if (!getRoom(roomId)) {
-        console.log(`outputChange failed: Room ${roomId} has not been created`);
-        return;
-      }
-
-      updateRoomOutput(roomId, output);
-      socket.to(roomId).emit('outputUpdate', output);
     });
   });
 };
