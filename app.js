@@ -3,11 +3,11 @@ import http from 'http';
 import dotenv from 'dotenv';
 import { setupRoomSocket } from './sockets/roomSocket.js';
 
-dotenv.config();
+if (process.env.NODE_ENV === 'development') dotenv.config({path: '.env.development'});
 
 const app = express();
 const server = http.createServer(app);
-const port = process.env.PORT || 8080;
+const port = process.env.DEFAULT_PORT;
 
 setupRoomSocket(server);
 

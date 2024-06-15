@@ -5,7 +5,7 @@ export const setupRoomSocket = (server) => {
 
   const io = new socketIO(server, {
     cors: {
-      origin: 'https://kellerflint.github.io', // 'http://localhost:3000'
+      origin: process.env.FRONTEND_APP_URL,
       methods: ['GET', 'POST'],
     },
   });
@@ -37,6 +37,7 @@ export const setupRoomSocket = (server) => {
         return;
       }
       
+      console.log("codeChange data:", data)
       updateRoomCode(roomId, code);
       socket.to(roomId).emit('codeUpdate', code);
     });
